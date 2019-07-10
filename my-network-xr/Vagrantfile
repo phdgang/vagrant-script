@@ -1,0 +1,99 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+Vagrant.configure(2) do |config|
+  
+
+   config.vm.define "rtrA" do |rtrA|
+      rtrA.vm.box =  "cisco_xr"
+
+      rtrA.vm.network "forwarded_port", guest: 57344, host: 57344 
+      # gig0/0/0 connected to "link1"
+      # auto_config is not supported for XR, set to false
+
+      rtrA.vm.network :private_network, virtualbox__intnet: "link1", auto_config: false
+      rtrA.vm.network :private_network, virtualbox__intnet: "link2", auto_config: false
+      rtrA.vm.network :private_network, virtualbox__intnet: "link3", auto_config: false
+      rtrA.vm.network :private_network, virtualbox__intnet: "link6", auto_config: false
+      rtrA.vm.network :private_network, virtualbox__intnet: "link7", auto_config: false
+
+
+    end
+
+ 
+    config.vm.define "devbox" do |node|
+      node.vm.box =  "ciscoxr/grpc-ubuntu-16.04"
+
+      # eth1 connected to link1
+      # auto_config is supported for an ubuntu instance
+
+      node.vm.network :private_network, virtualbox__intnet: "link1", ip: "11.1.1.20"
+
+    end
+
+
+    config.vm.define "switch" do |switch|
+      switch.vm.box =  "ubuntu/trusty64"
+
+      switch.vm.network "forwarded_port", guest: 57777, host: 57778, auto_correct: true
+      # gig0/0/0/0 connected to "link1"  and  gig0/0/0/1 connected to "link2"
+      # auto_config is not supported for XR, set to false
+
+      switch.vm.network :private_network, virtualbox__intnet: "link2", auto_config: false
+      switch.vm.network :private_network, virtualbox__intnet: "link3", auto_config: false
+      switch.vm.network :private_network, virtualbox__intnet: "link4", auto_config: false
+      switch.vm.network :private_network, virtualbox__intnet: "link5", auto_config: false
+
+
+      switch.vm.provision "apply_config", run: 'always', type: "shell" do |s|
+          s.path =  "scripts/setup_switch.sh"
+      end
+
+      switch.vm.provider "virtualbox" do |v|
+         v.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+         v.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
+         v.customize ["modifyvm", :id, "--nicpromisc4", "allow-all"]
+         v.customize ["modifyvm", :id, "--nicpromisc5", "allow-all"]
+         v.customize ["modifyvm", :id, "--nicpromisc7", "allow-all"]
+     end
+    end
+
+    config.vm.define "rtrB" do |rtrB|
+      rtrB.vm.box =  "cisco_xr"
+
+      rtrB.vm.network "forwarded_port", guest: 57344, host: 57345 
+      # gig0/0/0 connected to "link1"
+      # auto_config is not supported for XR, set to false
+
+      rtrB.vm.network :private_network, virtualbox__intnet: "link4", auto_config: false
+      rtrB.vm.network :private_network, virtualbox__intnet: "link5", auto_config: false
+      rtrB.vm.network :private_network, virtualbox__intnet: "link8", auto_config: false
+
+      #Source a config file and apply it to XR
+
+    end
+
+    config.vm.define "rtrC" do |rtrC|
+      rtrC.vm.box =  "cisco_xr"
+
+      rtrC.vm.network "forwarded_port", guest: 57344, host: 57346
+      # gig0/0/0 connected to "link1"
+      # auto_config is not supported for XR, set to false
+
+      rtrC.vm.network :private_network, virtualbox__intnet: "link6", auto_config: false
+      rtrC.vm.network :private_network, virtualbox__intnet: "link7", auto_config: false
+      rtrC.vm.network :private_network, virtualbox__intnet: "link8", auto_config: false
+
+      #Source a config file and apply it to XR
+
+    end
+
+
+
+
+end
